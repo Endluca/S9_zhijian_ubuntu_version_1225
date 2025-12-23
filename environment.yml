@@ -1,0 +1,76 @@
+name: s9_official
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # ============ Python解释器 ============
+  - python=3.13
+
+  # ============ 科学计算包（conda安装，性能更好）============
+  - numpy>=2.2
+  - pandas>=2.2
+  - openpyxl>=3.1
+
+  # ============ 视频处理（conda安装）============
+  - opencv>=4.10
+
+  # ============ 数据库（conda安装）============
+  - sqlalchemy>=2.0
+
+  # ============ HTTP客户端（conda安装）============
+  - requests>=2.32
+  - certifi>=2024.0
+
+  # ============ 工具包（conda安装）============
+  - python-dateutil>=2.9
+  - typing-extensions>=4.12
+  - pytz
+  - tzdata
+
+  # pip工具
+  - pip
+
+  # ============ 所有其他包用pip安装（避免版本冲突）============
+  - pip:
+      # Web框架
+      - fastapi==0.115.6
+      - uvicorn[standard]==0.34.0
+      - python-multipart==0.0.20
+
+      # 数据库驱动
+      - psycopg[binary]==3.3.2
+
+      # 认证与安全
+      - python-jose[cryptography]==3.3.0
+      - passlib[bcrypt]==1.7.4
+      - bcrypt==4.2.1
+      - cryptography==46.0.3
+
+      # 数据验证（重要：精确版本避免兼容性问题）
+      - pydantic==2.12.5
+      - pydantic-settings==2.12.0
+      - pydantic-core==2.41.5
+      - annotated-types==0.7.0
+      - email-validator>=2.0  # Pydantic EmailStr类型依赖
+
+      # HTTP客户端
+      - urllib3==2.2.3
+
+      # 阿里云服务
+      - dashscope>=1.25
+      - oss2>=2.18
+      - aliyun-python-sdk-core>=2.16
+      - aliyun-python-sdk-kms>=2.16
+      - crcmod>=1.7
+
+      # 字节跳动服务（使用最新版本）
+      - volcengine-python-sdk>=1.0
+      - httpx>=0.24  # volcenginesdkarkruntime的依赖
+
+      # 工具
+      - python-dotenv==1.0.1
+
+      # 底层依赖
+      - greenlet==3.3.0
+      - cffi==2.0.0
+      - pycryptodome==3.23.0

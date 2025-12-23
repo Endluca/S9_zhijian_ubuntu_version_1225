@@ -28,7 +28,8 @@ class VideoInfo(Base):
     llm_result_json = Column(Text)  # 豆包返回的完整结果 JSON
 
     # 任务状态
-    task_status = Column(String(20), default='pending', index=True)  # pending/processing/completed/failed
+    task_status = Column(String(20), default='uploaded', index=True)  # uploaded/processing/failed/pending_review/review_completed
+    compliance_status = Column(String(20), default='未质检完成', index=True)  # 正常/有违规/未质检完成
     current_step = Column(String(50))
     step_status = Column(Text)  # JSON 格式：{"asr":"completed","download":"processing"}
     error_message = Column(Text)

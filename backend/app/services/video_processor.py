@@ -239,6 +239,7 @@ class VideoProcessor:
 
         evaluation_results = llm_result["class_video_analysis"]["evaluation_results"]
 
+        # 保存 LLM 自动评估结果
         for category in evaluation_results:
             for item in category["items"]:
                 behavior_code = item["behavior_code"]
@@ -265,11 +266,39 @@ class VideoProcessor:
                 )
                 self.db.add(evaluation)
 
-        # 更新任务状态为已完成
-        video.task_status = "completed"
+        # 创建人工质检记录（当前仅 PORTRAIT_CLARITY）
+        self._create_manual_review_records(video_id)
+
+        # 更新任务状态为待人工质检
+        video.task_status = "pending_review"
         self.db.commit()
 
         self._update_step_status(video_id, "save_results", "completed")
+
+    def _create_manual_review_records(self, video_id: str) -> None:
+        """创建需要人工质检的评估记录"""
+        # 定义需要人工质检的 behavior_code 列表
+        manual_review_codes = ['PORTRAIT_CLARITY']
+
+        for behavior_code in manual_review_codes:
+            cat = self.db.query(EvaluationCategory).filter_by(
+                behavior_code=behavior_code
+            ).first()
+
+            if not cat:
+                logger.warning(f"[{video_id}] ⚠ 人工质检类别不存在: {behavior_code}")
+                continue
+
+            # 创建待人工评判的记录
+            evaluation = VideoEvaluation(
+                video_id=video_id,
+                category_id=cat.id,
+                is_compliant=None,  # NULL 表示待评判
+                evidence_timestamp="",
+                analysis_comment="待人工评判"
+            )
+            self.db.add(evaluation)
+            logger.info(f"[{video_id}] ✓ 创建人工质检记录: {cat.category_name}")
 
     def _step_cleanup_files(self, video_id: str) -> None:
         """步骤9：清理本地图片"""

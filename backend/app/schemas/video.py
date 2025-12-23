@@ -22,6 +22,7 @@ class VideoResponse(BaseModel):
     class_time: datetime
     video_duration: Optional[str] = None
     task_status: str
+    compliance_status: str  # 正常/有违规/未质检完成
     current_step: Optional[str] = None
     error_message: Optional[str] = None
     created_at: datetime
@@ -32,9 +33,12 @@ class VideoResponse(BaseModel):
 
 class VideoDetailResponse(VideoResponse):
     """视频详情响应"""
+    original_video_url: Optional[str] = None
     frame_urls: Optional[List[str]] = None
     llm_thinking: Optional[str] = None
+    formatted_text: Optional[str] = None  # 转录文本
     evaluations: Optional[List[dict]] = None
+    violations: Optional[List[dict]] = None  # 违规项列表
 
     @classmethod
     def from_orm_with_urls(cls, video):
@@ -46,9 +50,11 @@ class VideoDetailResponse(VideoResponse):
             "class_time": video.class_time,
             "video_duration": video.video_duration,
             "task_status": video.task_status,
+            "compliance_status": video.compliance_status,
             "current_step": video.current_step,
             "error_message": video.error_message,
             "created_at": video.created_at,
+            "original_video_url": video.original_video_url,
             "frame_urls": video.frame_urls.split(",") if video.frame_urls else [],
             "llm_thinking": video.llm_thinking,
         }
@@ -71,3 +77,9 @@ class TaskStatusResponse(BaseModel):
     step_status: Optional[dict] = None
     progress: int  # 进度百分比
     error_message: Optional[str] = None
+
+
+class EvaluationUpdateRequest(BaseModel):
+    """评估结果更新请求"""
+    is_compliant: bool
+    analysis_comment: Optional[str] = None

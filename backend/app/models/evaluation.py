@@ -21,7 +21,9 @@ class VideoEvaluation(Base):
         ForeignKey('evaluation_categories.id', ondelete='CASCADE'),
         nullable=False
     )
-    is_compliant = Column(Boolean, nullable=False)  # 是否合规
+    parent_category = Column(String(50))  # 父类别（从 evaluation_categories 同步）
+    category_name = Column(String(50))  # 子类别名（从 evaluation_categories 同步）
+    is_compliant = Column(Boolean, nullable=True)  # 是否合规（NULL 表示待人工评判）
     evidence_timestamp = Column(Text)  # 逗号分隔的时间戳（如 "05:32,18:45"）
     analysis_comment = Column(Text)  # 分析备注
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -21,11 +21,14 @@ class VideoResponse(BaseModel):
     teacher_name: str
     class_time: datetime
     video_duration: Optional[str] = None
+    original_video_url: Optional[str] = None  # 原视频 URL
     task_status: str
     compliance_status: str  # 正常/有违规/未质检完成
     current_step: Optional[str] = None
     error_message: Optional[str] = None
     created_at: datetime
+    violations: Optional[List[dict]] = None  # 违规项列表（用于列表展示）
+    frame_urls: Optional[List[str]] = None  # 关键帧 URL 列表
 
     class Config:
         from_attributes = True

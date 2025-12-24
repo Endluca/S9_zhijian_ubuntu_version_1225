@@ -2,12 +2,14 @@
 视频管理API路由
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from typing import Optional, List
 from datetime import datetime
 import uuid
 import logging
+import io
 
 from app.database import get_db
 from app.models.user import User
@@ -24,6 +26,7 @@ from app.schemas.video import (
 )
 from app.middleware.auth_middleware import get_current_user
 from app.services.task_manager import get_task_manager
+from app.services.report_generator import ReportGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -165,8 +168,50 @@ def list_videos(
     offset = (page - 1) * page_size
     videos = query.order_by(VideoInfo.created_at.desc()).offset(offset).limit(page_size).all()
 
+    # 为每个视频查询违规信息
+    video_responses = []
+    for video in videos:
+        # 查询该视频的违规项（JOIN evaluation_categories 获取 behavior_code）
+        violations = db.query(VideoEvaluation, EvaluationCategory).join(
+            EvaluationCategory,
+            VideoEvaluation.category_id == EvaluationCategory.id
+        ).filter(
+            and_(
+                VideoEvaluation.video_id == video.video_id,
+                VideoEvaluation.is_compliant == False
+            )
+        ).all()
+        
+        # 构建违规列表
+        violations_list = [
+            {
+                "parent_category": evaluation.parent_category,
+                "category_name": evaluation.category_name,
+                "behavior_code": category.behavior_code,
+            }
+            for evaluation, category in violations
+        ]
+        
+        # 手动创建响应对象（因为需要转换 frame_urls）
+        video_response = VideoResponse(
+            video_id=video.video_id,
+            student_id=video.student_id,
+            teacher_name=video.teacher_name,
+            class_time=video.class_time,
+            video_duration=video.video_duration,
+            original_video_url=video.original_video_url,
+            task_status=video.task_status,
+            compliance_status=video.compliance_status,
+            current_step=video.current_step,
+            error_message=video.error_message,
+            created_at=video.created_at,
+            violations=violations_list,
+            frame_urls=video.frame_urls.split(",") if video.frame_urls else []
+        )
+        video_responses.append(video_response)
+
     return VideoListResponse(
-        data=[VideoResponse.from_orm(v) for v in videos],
+        data=video_responses,
         total=total,
         page=page,
         page_size=page_size
@@ -213,6 +258,7 @@ def get_video_detail(
 
     for eval, category in evaluations:
         eval_item = {
+            "category_id": category.id,  # 添加 category_id
             "category_name": category.category_name,
             "parent_category": category.parent_category,
             "behavior_code": category.behavior_code,
@@ -395,3 +441,81 @@ def _check_and_update_review_status(db: Session, video_id: str) -> None:
             video.task_status = "review_completed"
             db.commit()
             logger.info(f"[{video_id}] 所有人工质检项已完成，状态已更新为 review_completed")
+
+
+@router.get("/{video_id}/report")
+def generate_report(
+    video_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    生成教学质量反馈报告（PNG图片）
+
+    **路径参数：**
+    - video_id: 视频ID
+
+    **返回：**
+    PNG 图片文件
+    """
+    # 查询视频
+    video = db.query(VideoInfo).filter(VideoInfo.video_id == video_id).first()
+    if not video:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="视频不存在"
+        )
+
+    # 查询违规项
+    violations = db.query(VideoEvaluation).filter(
+        and_(
+            VideoEvaluation.video_id == video_id,
+            VideoEvaluation.is_compliant == False
+        )
+    ).all()
+
+    # 构建违规列表
+    violations_list = [
+        {
+            "category_name": v.category_name,
+            "parent_category": v.parent_category,
+        }
+        for v in violations
+    ]
+
+    # 获取第三张关键帧作为截图
+    screenshot_url = None
+    if video.frame_urls:
+        frames = video.frame_urls.split(",")
+        screenshot_url = frames[2] if len(frames) > 2 else frames[0] if frames else None
+
+    # 生成报告
+    report_generator = ReportGenerator()
+    try:
+        image_bytes = report_generator.generate_report(
+            video_id=video.video_id,
+            student_id=video.student_id,
+            teacher_name=video.teacher_name,
+            class_time=video.class_time.strftime('%Y/%m/%d %H:%M'),
+            video_duration=video.video_duration or 'N/A',
+            violations=violations_list,
+            screenshot_url=screenshot_url
+        )
+
+        logger.info(f"报告生成成功: {video_id}, 用户: {current_user.email}")
+
+        # 返回图片
+        return StreamingResponse(
+            io.BytesIO(image_bytes),
+            media_type="image/png",
+            headers={
+                "Content-Disposition": f"attachment; filename=feedback_report_{video_id}.png"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"报告生成失败: {video_id}, 错误: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"报告生成失败: {str(e)}"
+        )

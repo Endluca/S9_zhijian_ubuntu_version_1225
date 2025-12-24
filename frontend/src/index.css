@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm Minimalism Color Palette */
+    --background: 36 44% 96%;
+    --foreground: 0 0% 18%;
+
+    --card: 36 40% 98%;
+    --card-foreground: 0 0% 18%;
+
+    --popover: 36 40% 98%;
+    --popover-foreground: 0 0% 18%;
+
+    /* Primary - Deep Charcoal */
+    --primary: 0 0% 18%;
+    --primary-foreground: 36 44% 96%;
+
+    /* Secondary - Warm Brown */
+    --secondary: 25 30% 90%;
+    --secondary-foreground: 0 0% 18%;
+
+    /* Muted */
+    --muted: 36 20% 92%;
+    --muted-foreground: 25 10% 40%;
+
+    /* Accent - Soft Green */
+    --accent: 140 20% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success */
+    --success: 140 35% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 36 20% 88%;
+    --input: 36 20% 88%;
+    --ring: 0 0% 18%;
+
+    --radius: 1rem;
+
+    /* Category Colors */
+    --category-blue: 210 50% 75%;
+    --category-green: 140 20% 70%;
+    --category-cyan: 195 50% 70%;
+    --category-pink: 330 40% 75%;
+    --category-gold: 50 45% 70%;
+
+    /* Custom tokens */
+    --surface-elevated: 36 40% 99%;
+    --surface-sunken: 36 30% 94%;
+
+    --sidebar-background: 36 40% 98%;
+    --sidebar-foreground: 0 0% 18%;
+    --sidebar-primary: 0 0% 18%;
+    --sidebar-primary-foreground: 36 44% 96%;
+    --sidebar-accent: 36 30% 92%;
+    --sidebar-accent-foreground: 0 0% 18%;
+    --sidebar-border: 36 20% 88%;
+    --sidebar-ring: 0 0% 18%;
+  }
+
+  .dark {
+    --background: 0 0% 10%;
+    --foreground: 36 44% 96%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 36 44% 96%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 36 44% 96%;
+
+    --primary: 36 44% 96%;
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 25 20% 20%;
+    --secondary-foreground: 36 44% 96%;
+
+    --muted: 0 0% 18%;
+    --muted-foreground: 36 20% 65%;
+
+    --accent: 140 15% 40%;
+    --accent-foreground: 36 44% 96%;
+
+    --destructive: 0 50% 45%;
+    --destructive-foreground: 36 44% 96%;
+
+    --success: 140 30% 40%;
+    --success-foreground: 36 44% 96%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 36 44% 96%;
+
+    /* Category Colors - Dark Mode (desaturated) */
+    --category-blue: 210 35% 55%;
+    --category-green: 140 15% 50%;
+    --category-cyan: 195 35% 50%;
+    --category-pink: 330 25% 55%;
+    --category-gold: 50 30% 50%;
+
+    --surface-elevated: 0 0% 14%;
+    --surface-sunken: 0 0% 8%;
+
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 36 44% 96%;
+    --sidebar-primary: 36 44% 96%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 36 44% 96%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 36 44% 96%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Merriweather', Georgia, serif;
+  }
+}
+
+@layer utilities {
+  .gradient-warm {
+    background: linear-gradient(135deg, hsl(36 44% 96%) 0%, hsl(25 30% 92%) 100%);
+  }
+
+  .gradient-login {
+    background: linear-gradient(160deg, hsl(36 44% 96%) 0%, hsl(25 30% 88%) 50%, hsl(36 20% 85%) 100%);
+  }
+
+  .shadow-soft {
+    box-shadow: 0 4px 20px -4px hsl(25 30% 50% / 0.1);
+  }
+
+  .shadow-card {
+    box-shadow: 0 2px 8px 0 hsl(25 30% 50% / 0.06);
+  }
+
+  .shadow-card-hover {
+    box-shadow: 0 20px 40px -10px hsl(25 30% 50% / 0.15);
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-300;
+  }
+  
+  .card-hover:hover {
+    @apply scale-[1.02];
+    box-shadow: 0 20px 40px -10px hsl(25 30% 50% / 0.15);
+  }
+
+  /* Image zoom effect */
+  .img-zoom {
+    @apply transition-transform duration-700 ease-out;
+  }
+
+  .img-zoom:hover {
+    @apply scale-110;
+  }
+
+  /* Button hover */
+  .btn-hover {
+    @apply transition-transform duration-200;
+  }
+
+  .btn-hover:hover {
+    @apply scale-105;
+  }
+
+  /* Stagger animation delays */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+  .stagger-6 { animation-delay: 0.6s; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}

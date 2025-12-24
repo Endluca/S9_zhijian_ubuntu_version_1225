@@ -14,7 +14,7 @@ class VideoInfo(Base):
     student_id = Column(String(100), nullable=False, index=True)
     teacher_name = Column(String(100), nullable=False, index=True)
     class_time = Column(DateTime, nullable=False, index=True)
-    video_duration = Column(String(20))  # 分钟数，如 "55"
+    video_duration = Column(String(20))  # 时长格式：HH:MM:SS，如 "00:55:21"
     original_video_url = Column(Text, nullable=False)
 
     # OSS 图片 URL（逗号分隔）

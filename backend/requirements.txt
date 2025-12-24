@@ -30,6 +30,7 @@ certifi>=2024.0
 # 视频处理 (Python 3.13兼容)
 opencv-python==4.12.0.88
 numpy==2.2.6
+Pillow==11.1.0  # 报告图片生成
 
 # 数据处理
 pandas==2.2.3

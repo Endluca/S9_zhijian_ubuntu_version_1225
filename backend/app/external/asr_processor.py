@@ -137,7 +137,7 @@ class ASRProcessor:
             包含 formatted_text 和 duration 的字典
             {
                 "formatted_text": "视频总时长：...\n发言人1,00:00:08,hello\n...",
-                "duration": "55"  # 分钟数
+                "duration": "00:55:21"  # HH:MM:SS 格式
             }
 
         Raises:
@@ -164,16 +164,16 @@ class ASRProcessor:
                 lines.append(f"发言人{speaker_id},{start_ts},{text}")
 
             formatted_text = "\n".join(lines)
-            duration_minutes = self.ms_to_minutes(duration_ms)
+            duration_hhmmss = self.ms_to_hhmmss(duration_ms)  # 改为 HH:MM:SS 格式
 
             result = {
                 "formatted_text": formatted_text,
-                "duration": duration_minutes,
+                "duration": duration_hhmmss,
             }
 
             logger.info(
                 f"[ASRProcessor] ✓ 处理完成: "
-                f"时长={duration_minutes}分钟, 段落数={len(segments)}"
+                f"时长={duration_hhmmss}, 段落数={len(segments)}"
             )
             return result
 

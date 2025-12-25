@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Menu, 
@@ -28,6 +28,9 @@ const ManualReview: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [framesExpanded, setFramesExpanded] = useState(false);
+  const lastCheckedVideoIdRef = useRef<string | null>(null);
+  // 保存初始视频列表长度，用于右上角显示
+  const initialVideoCountRef = useRef<number | null>(null);
 
   // 获取待人工审核的视频列表
   const { data: videosData, isLoading } = useQuery({
@@ -40,17 +43,36 @@ const ManualReview: React.FC = () => {
       });
       return response.data;
     },
+    // 只在组件挂载时获取一次，不自动刷新
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // 当前视频
   const videos = videosData?.data || [];
+  
+  // 初始化时保存视频列表长度
+  useEffect(() => {
+    if (videos.length > 0 && initialVideoCountRef.current === null) {
+      initialVideoCountRef.current = videos.length;
+    }
+  }, [videos.length]);
+
+  // 确保 currentIndex 不会超出范围
+  useEffect(() => {
+    if (videos.length > 0 && currentIndex >= videos.length) {
+      setCurrentIndex(Math.max(0, videos.length - 1));
+    }
+  }, [videos.length, currentIndex]);
+
   const currentVideo = videos[currentIndex];
 
   // 获取当前视频详情
-  const { data: currentDetail } = useQuery({
+  const { data: currentDetail, isLoading: isLoadingDetail, isError: isErrorDetail } = useQuery({
     queryKey: ['video-detail', currentVideo?.video_id],
     queryFn: () => videosApi.getVideoDetail(currentVideo!.video_id).then(res => res.data),
     enabled: !!currentVideo,
+    retry: 2,
   });
 
   // 需要人工审核的评估项（is_compliant 为 null）
@@ -61,6 +83,23 @@ const ManualReview: React.FC = () => {
 
   // 当前正在审核的评估项
   const currentEvaluation = pendingEvaluations[0];
+
+  // 当视频详情加载完成但没有待审核项时，自动跳到下一个视频
+  useEffect(() => {
+    if (currentDetail && !isLoadingDetail && pendingEvaluations.length === 0 && videos.length > 0) {
+      const videoId = currentDetail.video_id;
+      // 避免重复处理同一个视频（只在视频ID改变时检查一次）
+      if (lastCheckedVideoIdRef.current !== videoId) {
+        lastCheckedVideoIdRef.current = videoId;
+        // 当前视频没有待审核项，自动跳到下一个
+        if (currentIndex < videos.length - 1) {
+          setTimeout(() => {
+            setCurrentIndex(currentIndex + 1);
+          }, 300);
+        }
+      }
+    }
+  }, [currentDetail?.video_id, isLoadingDetail, pendingEvaluations.length, currentIndex, videos.length]);
 
   // 更新评估结果
   const updateMutation = useMutation({
@@ -76,23 +115,39 @@ const ManualReview: React.FC = () => {
         { is_compliant: isCompliant }
       );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('评估结果已保存');
-      // 刷新数据
+      // 只刷新视频详情，不刷新视频列表（避免列表变化导致索引越界）
       queryClient.invalidateQueries({ queryKey: ['video-detail', currentVideo?.video_id] });
-      queryClient.invalidateQueries({ queryKey: ['manual-review-videos'] });
       
-      // 如果还有待审核的项，停留在当前视频；否则跳到下一个视频
-      setTimeout(() => {
-        if (pendingEvaluations.length <= 1) {
-          // 跳到下一个视频
+      // 重新获取最新的视频详情数据
+      try {
+        const latestDetail = await queryClient.fetchQuery({
+          queryKey: ['video-detail', currentVideo?.video_id],
+          queryFn: () => videosApi.getVideoDetail(currentVideo!.video_id).then(res => res.data),
+        });
+        
+        // 检查是否还有待审核的项
+        const remainingPending = latestDetail?.evaluations?.filter(e => e.is_compliant === null) || [];
+        
+        if (remainingPending.length === 0) {
+          // 没有待审核项了，跳到下一个视频
           if (currentIndex < videos.length - 1) {
-            setCurrentIndex(currentIndex + 1);
+            setTimeout(() => {
+              setCurrentIndex(currentIndex + 1);
+            }, 300);
           } else {
             toast.success('所有视频已审核完毕！');
           }
         }
-      }, 500);
+      } catch (error) {
+        // 如果获取数据失败，仍然尝试跳转（基于当前已知的状态）
+        if (pendingEvaluations.length <= 1 && currentIndex < videos.length - 1) {
+          setTimeout(() => {
+            setCurrentIndex(currentIndex + 1);
+          }, 300);
+        }
+      }
     },
     onError: (error: any) => {
       toast.error(`保存失败: ${error.response?.data?.detail || error.message}`);
@@ -139,7 +194,11 @@ const ManualReview: React.FC = () => {
               
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">
-                  {videos.length > 0 ? `${currentIndex + 1} / ${videos.length}` : '0 / 0'}
+                  {videos.length > 0 && initialVideoCountRef.current !== null
+                    ? `${currentIndex + 1} / ${initialVideoCountRef.current}`
+                    : videos.length > 0
+                    ? `${currentIndex + 1} / ${videos.length}`
+                    : '0 / 0'}
                 </span>
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
@@ -165,7 +224,40 @@ const ManualReview: React.FC = () => {
                   <p className="text-muted-foreground">所有视频都已完成人工审核</p>
                 </Card>
               </div>
-            ) : !currentDetail || !currentEvaluation ? (
+            ) : isLoadingDetail ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">加载详情中...</p>
+                </div>
+              </div>
+            ) : isErrorDetail ? (
+              <div className="flex items-center justify-center h-full">
+                <Card className="p-8 text-center">
+                  <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold mb-2">加载失败</h2>
+                  <p className="text-muted-foreground mb-4">无法加载视频详情，请稍后重试</p>
+                  <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['video-detail', currentVideo?.video_id] })}>
+                    重试
+                  </Button>
+                </Card>
+              </div>
+            ) : !currentDetail ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">加载详情中...</p>
+                </div>
+              </div>
+            ) : pendingEvaluations.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <Card className="p-8 text-center">
+                  <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold mb-2">该视频已全部审核完毕</h2>
+                  <p className="text-muted-foreground mb-4">正在跳转到下一个视频...</p>
+                </Card>
+              </div>
+            ) : !currentEvaluation ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>

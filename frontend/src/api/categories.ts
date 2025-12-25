@@ -4,6 +4,6 @@ import type { CategoryResponse } from '@/types/api';
 export const categoriesApi = {
   // 获取评估类别
   getCategories: () => {
-    return client.get<CategoryResponse[]>('/api/categories');
+    return client.get<CategoryResponse[]>('/categories');
   },
 };

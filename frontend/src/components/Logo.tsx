@@ -21,7 +21,7 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
         className={`${sizes[size]} w-auto object-contain`}
       />
       <span className="text-base font-semibold text-muted-foreground">
-        51Talk S9 AI教练质检平台
+        高级——AC教室质检平台
       </span>
     </div>
   );

@@ -30,13 +30,13 @@ class Settings(BaseSettings):
     TINGWU_MODEL: str = "tingwu-meeting"
 
     # 豆包模型配置
-    DOUBAO_API_KEY: str = "fbcbd81e-edc2-4215-9133-b18f1b2a9b7d"
+    DOUBAO_API_KEY: str = ""  # 从环境变量读取，不要硬编码
     DOUBAO_BASE_URL: str = "https://ark.cn-beijing.volces.com/api/v3"
     DOUBAO_MODEL: str = "doubao-seed-1-6-251015"
 
     # 阿里云 OSS 配置
-    OSS_ACCESS_KEY_ID: str = "LTAI5tMcWntnNksoBW87sEQM"
-    OSS_ACCESS_KEY_SECRET: str = "yfvip5vKTM5bbXHt8ueRmO6DaOWjdM"
+    OSS_ACCESS_KEY_ID: str = ""  # 从环境变量读取
+    OSS_ACCESS_KEY_SECRET: str = ""  # 从环境变量读取
     OSS_BUCKET_NAME: str = "51talk-ai"
     OSS_ENDPOINT: str = "oss-cn-beijing.aliyuncs.com"
     OSS_BASE_URL: str = "https://51talk-ai.oss-cn-beijing.aliyuncs.com"

@@ -84,15 +84,28 @@ class DoubaoModelClient:
 
             logger.debug(f"[Doubao] 模型响应: {response}")
 
-            # 解析响应
-            thinking = self._extract_thinking(response)
-            result_json = self._extract_result_json(response)
+            # 保存完整响应内容（在解析之前）
+            response_str = str(response)
 
-            logger.info(f"[Doubao] ✓ 分析完成")
+            # 解析响应（即使解析失败，也要返回完整响应）
+            try:
+                thinking = self._extract_thinking(response)
+                result_json = self._extract_result_json(response)
+                logger.info(f"[Doubao] ✓ 分析完成")
+            except Exception as parse_error:
+                logger.error(f"[Doubao] ✗ 解析响应失败: {str(parse_error)}")
+                # 即使解析失败，也返回完整响应，以便调试
+                return {
+                    "thinking": "",
+                    "result": {},
+                    "raw_response": response_str,  # 返回完整响应内容用于调试
+                    "parse_error": str(parse_error)  # 记录解析错误
+                }
 
             return {
                 "thinking": thinking,
-                "result": result_json
+                "result": result_json,
+                "raw_response": response_str  # 返回完整响应内容
             }
 
         except Exception as e:

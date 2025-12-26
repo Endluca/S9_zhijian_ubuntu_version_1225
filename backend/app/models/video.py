@@ -26,6 +26,7 @@ class VideoInfo(Base):
     # 大模型分析结果
     llm_thinking = Column(Text)  # 豆包的 thinking 过程
     llm_result_json = Column(Text)  # 豆包返回的完整结果 JSON
+    llm_result_all = Column(Text)  # 大模型的完整返回内容（解析前保存，用于调试）
 
     # 任务状态
     task_status = Column(String(20), default='uploaded', index=True)  # uploaded/processing/failed/pending_review/review_completed

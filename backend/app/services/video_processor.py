@@ -4,6 +4,7 @@
 """
 import json
 import logging
+import time
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.models.video import VideoInfo
@@ -198,7 +199,7 @@ class VideoProcessor:
 
     @retry_on_network_error(max_retries=3, delays=[5, 10, 20])
     def _step_llm_analysis(self, video_id: str, frame_urls: list) -> Dict[str, Any]:
-        """步骤7：调用豆包模型"""
+        """步骤7：调用豆包模型（带解析失败重试）"""
         self._update_step_status(video_id, "llm_analysis", "processing")
 
         # 获取转录文本和视频时长
@@ -209,24 +210,92 @@ class VideoProcessor:
         video = self._get_video_info(video_id)
         duration = video.video_duration or "0"
 
-        logger.info(f"[{video_id}] 步骤7: 调用豆包模型分析")
-        result = self.doubao_client.analyze(
-            frame_urls,
-            transcript.formatted_text,
-            video_id=video_id,
-            duration=duration
-        )
+        # 解析失败重试逻辑（最多重试2次，加上第一次共3次尝试）
+        max_parse_retries = 2
+        parse_retry_count = 0
+        parse_retry_delays = [3, 5]  # 重试延迟（秒）
 
-        thinking = result['thinking']
-        result_json = result['result']
+        while parse_retry_count <= max_parse_retries:
+            try:
+                if parse_retry_count > 0:
+                    logger.warning(
+                        f"[{video_id}] 步骤7: 解析失败，重新调用大模型 "
+                        f"(第 {parse_retry_count + 1}/{max_parse_retries + 1} 次尝试)"
+                    )
+                else:
+                    logger.info(f"[{video_id}] 步骤7: 调用豆包模型分析")
 
-        # 保存到数据库
-        video.llm_thinking = thinking
-        video.llm_result_json = json.dumps(result_json, ensure_ascii=False)
-        self.db.commit()
+                # 调用大模型
+                result = self.doubao_client.analyze(
+                    frame_urls,
+                    transcript.formatted_text,
+                    video_id=video_id,
+                    duration=duration
+                )
 
-        self._update_step_status(video_id, "llm_analysis", "completed")
-        return result_json
+                # 先保存完整响应内容（在解析之前）
+                raw_response = result.get('raw_response', '')
+                video.llm_result_all = raw_response
+                self.db.commit()
+
+                # 检查是否有解析错误
+                if 'parse_error' in result:
+                    parse_error = result.get('parse_error', '未知错误')
+                    
+                    # 如果还有重试机会
+                    if parse_retry_count < max_parse_retries:
+                        delay = parse_retry_delays[parse_retry_count] if parse_retry_count < len(parse_retry_delays) else parse_retry_delays[-1]
+                        logger.warning(
+                            f"[{video_id}] 大模型响应解析失败: {parse_error}，"
+                            f"{delay}秒后重试 (第 {parse_retry_count + 1}/{max_parse_retries} 次重试)"
+                        )
+                        logger.info(f"[{video_id}] 完整响应已保存到 llm_result_all 字段")
+                        
+                        # 等待后重试
+                        time.sleep(delay)
+                        parse_retry_count += 1
+                        continue
+                    else:
+                        # 达到最大重试次数，放弃
+                        logger.error(
+                            f"[{video_id}] ✗ 大模型响应解析失败，已达到最大重试次数 ({max_parse_retries})"
+                        )
+                        logger.error(f"[{video_id}] 解析错误: {parse_error}")
+                        logger.info(f"[{video_id}] 完整响应已保存到 llm_result_all 字段，可用于调试")
+                        
+                        # 保存错误信息
+                        video.error_message = f"大模型响应解析失败（已重试{max_parse_retries}次）: {parse_error}"
+                        self.db.commit()
+                        raise ValueError(
+                            f"大模型响应解析失败（已重试{max_parse_retries}次），完整响应已保存: {parse_error}"
+                        )
+
+                # 解析成功，保存结果
+                thinking = result.get('thinking', '')
+                result_json = result.get('result', {})
+
+                # 保存到数据库
+                video.llm_thinking = thinking
+                video.llm_result_json = json.dumps(result_json, ensure_ascii=False)
+                
+                # 如果之前有错误信息，清除它
+                if video.error_message and '解析失败' in video.error_message:
+                    video.error_message = None
+                
+                self.db.commit()
+
+                if parse_retry_count > 0:
+                    logger.info(f"[{video_id}] ✓ 重试后解析成功")
+                else:
+                    logger.info(f"[{video_id}] ✓ 分析完成")
+
+                self._update_step_status(video_id, "llm_analysis", "completed")
+                return result_json
+
+            except Exception as e:
+                # 其他异常（如网络错误）会被 @retry_on_network_error 装饰器处理
+                # 解析失败不会抛出异常，而是返回包含 parse_error 的字典，所以这里主要处理其他异常
+                raise
 
     def _step_save_results(self, video_id: str) -> None:
         """步骤8：解析并保存结果"""

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, Download, Check } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { videosApi } from '@/api';
 import { transformVideoResponse } from '@/utils/transformers';
@@ -14,6 +14,9 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { FilterState, ViewMode, QARecord } from '@/types/qa';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
+import { getSubCategoryLabel } from '@/data/violationCategories';
 
 const initialFilters: FilterState = {
   courseId: '',
@@ -32,6 +35,8 @@ const Dashboard: React.FC = () => {
   const [pageSize, setPageSize] = useState(20);
   const [selectedRecord, setSelectedRecord] = useState<QARecord | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isExportMode, setIsExportMode] = useState(false);
 
   // 前端 detectionStatus 映射到后端 task_status
   const mapDetectionStatusToTaskStatus = (status: string): string | undefined => {
@@ -99,6 +104,152 @@ const Dashboard: React.FC = () => {
     setCurrentPage(1);
   };
 
+  // 切换选中状态
+  const handleToggleSelect = (id: string) => {
+    const newSelectedIds = new Set(selectedIds);
+    if (newSelectedIds.has(id)) {
+      newSelectedIds.delete(id);
+    } else {
+      newSelectedIds.add(id);
+    }
+    setSelectedIds(newSelectedIds);
+  };
+
+  // 全选/取消全选
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredRecords.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredRecords.map(r => r.id)));
+    }
+  };
+
+  // 获取检测状态显示文本
+  const getDetectionStatusText = (status: QARecord['detectionStatus']): string => {
+    switch (status) {
+      case 'uploaded':
+        return '已上传';
+      case 'processing':
+        return '处理中';
+      case 'pending_review':
+        return '待人工质检';
+      case 'completed':
+        return '质检完成';
+      case 'failed':
+        return '处理失败';
+      default:
+        return '未知';
+    }
+  };
+
+  // 导出表格
+  const handleExport = async () => {
+    if (selectedIds.size === 0) {
+      toast.error('请至少选择一条记录');
+      return;
+    }
+
+    const toastId = toast.loading('正在准备导出数据...');
+
+    try {
+      // 获取选中的记录
+      const selectedRecords = filteredRecords.filter(r => selectedIds.has(r.id));
+      
+      toast.loading(`正在获取 ${selectedRecords.length} 条记录的详细信息...`, { id: toastId });
+      
+      // 获取详细信息（包含分析记录）
+      const recordsWithDetails = await Promise.all(
+        selectedRecords.map(async (record) => {
+          try {
+            const detailResponse = await videosApi.getVideoDetail(record.id);
+            const detail = detailResponse.data;
+            
+            // 提取分析记录（只提取预警标签对应的违规项分析记录）
+            const analysisComments = detail.evaluations
+              ?.filter((e: any) => e.is_compliant === false && e.analysis_comment)
+              .map((e: any) => e.analysis_comment)
+              .join('；') || '';
+            
+            return {
+              ...record,
+              analysisComment: analysisComments,
+            };
+          } catch (error) {
+            // 如果获取详情失败，使用基本信息
+            return {
+              ...record,
+              analysisComment: '',
+            };
+          }
+        })
+      );
+
+      // 准备导出数据
+      const exportData = recordsWithDetails.map(record => ({
+        '视频id': record.id,
+        '教师姓名': record.teacherName,
+        '学员ID': record.studentId,
+        '上课时间': record.classTime,
+        '课程时长': record.classDuration,
+        '检测状态': getDetectionStatusText(record.detectionStatus),
+        '原视频url': record.videoLink,
+        '是否违规': record.isViolation ? '是' : '否',
+        'AI预警标签': record.violations.length > 0 
+          ? record.violations.map(v => getSubCategoryLabel(v.subCategory)).join('、')
+          : '无',
+        '分析记录': record.analysisComment || '无',
+      }));
+
+      // 创建工作簿
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // 设置列宽
+      const colWidths = [
+        { wch: 20 }, // 视频id
+        { wch: 12 }, // 教师姓名
+        { wch: 15 }, // 学员ID
+        { wch: 20 }, // 上课时间
+        { wch: 12 }, // 课程时长
+        { wch: 12 }, // 检测状态
+        { wch: 40 }, // 原视频url
+        { wch: 10 }, // 是否违规
+        { wch: 20 }, // AI预警标签
+        { wch: 50 }, // 分析记录
+      ];
+      ws['!cols'] = colWidths;
+
+      // 添加工作表到工作簿
+      XLSX.utils.book_append_sheet(wb, ws, '质检记录');
+
+      toast.loading('正在生成Excel文件...', { id: toastId });
+      
+      // 导出文件
+      const fileName = `质检记录_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      toast.success(`已导出 ${selectedIds.size} 条记录`, { id: toastId });
+      
+      // 重置选中状态和导出模式
+      setSelectedIds(new Set());
+      setIsExportMode(false);
+    } catch (error: any) {
+      toast.error(`导出失败: ${error.message}`, { id: toastId });
+    }
+  };
+
+  // 切换导出模式
+  const handleToggleExportMode = () => {
+    if (isExportMode) {
+      // 确认导出
+      handleExport();
+    } else {
+      // 进入导出模式
+      setIsExportMode(true);
+      setSelectedIds(new Set());
+    }
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -150,10 +301,50 @@ const Dashboard: React.FC = () => {
 
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-muted-foreground">
-                共 <span className="font-medium text-foreground">{totalRecords}</span> 条记录
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-muted-foreground">
+                  共 <span className="font-medium text-foreground">{totalRecords}</span> 条记录
+                </div>
+                {isExportMode && selectedIds.size > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    已选择 <span className="font-medium text-foreground">{selectedIds.size}</span> 条
+                  </div>
+                )}
               </div>
-              <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+              <div className="flex items-center gap-3">
+                <Button
+                  variant={isExportMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleToggleExportMode}
+                  disabled={isExportMode && selectedIds.size === 0}
+                  className={isExportMode && selectedIds.size === 0 ? "opacity-50 cursor-not-allowed" : ""}
+                >
+                  {isExportMode ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      确认导出
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      导出表格
+                    </>
+                  )}
+                </Button>
+                {isExportMode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsExportMode(false);
+                      setSelectedIds(new Set());
+                    }}
+                  >
+                    取消
+                  </Button>
+                )}
+                <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+              </div>
             </div>
 
             {/* Loading State */}
@@ -165,9 +356,22 @@ const Dashboard: React.FC = () => {
               <>
                 {/* Data View */}
                 {viewMode === 'list' ? (
-                  <ListView records={filteredRecords} onViewDetail={handleViewDetail} />
+                  <ListView 
+                    records={filteredRecords} 
+                    onViewDetail={handleViewDetail}
+                    isExportMode={isExportMode}
+                    selectedIds={selectedIds}
+                    onToggleSelect={handleToggleSelect}
+                    onSelectAll={handleSelectAll}
+                  />
                 ) : (
-                  <CardView records={filteredRecords} onViewDetail={handleViewDetail} />
+                  <CardView 
+                    records={filteredRecords} 
+                    onViewDetail={handleViewDetail}
+                    isExportMode={isExportMode}
+                    selectedIds={selectedIds}
+                    onToggleSelect={handleToggleSelect}
+                  />
                 )}
 
                 {/* Pagination */}

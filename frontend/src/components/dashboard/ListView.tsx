@@ -22,15 +22,27 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface ListViewProps {
   records: QARecord[];
   onViewDetail: (record: QARecord) => void;
+  isExportMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  onSelectAll?: () => void;
 }
 
-export const ListView: React.FC<ListViewProps> = ({ records, onViewDetail }) => {
+export const ListView: React.FC<ListViewProps> = ({ 
+  records, 
+  onViewDetail,
+  isExportMode = false,
+  selectedIds = new Set(),
+  onToggleSelect,
+  onSelectAll,
+}) => {
   const navigate = useNavigate();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -125,6 +137,14 @@ export const ListView: React.FC<ListViewProps> = ({ records, onViewDetail }) => 
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
+              {isExportMode && (
+                <TableHead className="w-[50px]">
+                  <Checkbox
+                    checked={records.length > 0 && selectedIds.size === records.length}
+                    onCheckedChange={onSelectAll}
+                  />
+                </TableHead>
+              )}
               <TableHead className="w-[120px]">封面预览</TableHead>
               <TableHead className="w-[220px]">课程信息</TableHead>
               <TableHead className="w-[120px]">检测状态</TableHead>
@@ -140,9 +160,20 @@ export const ListView: React.FC<ListViewProps> = ({ records, onViewDetail }) => 
               return (
                 <TableRow 
                   key={record.id}
-                  className="group hover:bg-muted/20 transition-colors"
+                  className={cn(
+                    "group hover:bg-muted/20 transition-colors",
+                    isExportMode && selectedIds.has(record.id) && "bg-primary/5"
+                  )}
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
+                  {isExportMode && (
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(record.id)}
+                        onCheckedChange={() => onToggleSelect?.(record.id)}
+                      />
+                    </TableCell>
+                  )}
                   {/* 封面预览 - 80x45px 圆角矩形 */}
                   <TableCell>
                     {record.detectionStatus === 'uploaded' || record.detectionStatus === 'processing' || record.detectionStatus === 'failed' ? (

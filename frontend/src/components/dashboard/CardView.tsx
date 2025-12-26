@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Clock, User, Eye, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { QARecord } from '@/types/qa';
 import { StatusBadge } from '@/components/StatusBadge';
 import { getSubCategoryLabel } from '@/data/violationCategories';
@@ -12,9 +13,18 @@ import { toast } from 'sonner';
 interface CardViewProps {
   records: QARecord[];
   onViewDetail: (record: QARecord) => void;
+  isExportMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
-export const CardView: React.FC<CardViewProps> = ({ records, onViewDetail }) => {
+export const CardView: React.FC<CardViewProps> = ({ 
+  records, 
+  onViewDetail,
+  isExportMode = false,
+  selectedIds = new Set(),
+  onToggleSelect,
+}) => {
   const navigate = useNavigate();
   const [reportPreviewUrl, setReportPreviewUrl] = useState<string | null>(null);
   const [reportVideoId, setReportVideoId] = useState<string>('');
@@ -52,13 +62,23 @@ export const CardView: React.FC<CardViewProps> = ({ records, onViewDetail }) => 
         <div
           key={record.id}
           className={cn(
-            "bg-card rounded-xl shadow-card overflow-hidden cursor-pointer",
+            "bg-card rounded-xl shadow-card overflow-hidden",
             "transition-all duration-200 hover:shadow-card-hover hover:-translate-y-1",
-            "group"
+            "group relative",
+            isExportMode && selectedIds.has(record.id) && "ring-2 ring-primary",
+            !isExportMode && "cursor-pointer"
           )}
           style={{ animationDelay: `${index * 50}ms` }}
-          onClick={() => onViewDetail(record)}
+          onClick={() => !isExportMode && onViewDetail(record)}
         >
+          {isExportMode && (
+            <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                checked={selectedIds.has(record.id)}
+                onCheckedChange={() => onToggleSelect?.(record.id)}
+              />
+            </div>
+          )}
           {/* Image Section - 60% */}
           <div className="relative aspect-video overflow-hidden">
             <img

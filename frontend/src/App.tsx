@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Login from '@/pages/Login';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
+import StatisticsDashboard from '@/pages/StatisticsDashboard';
 import Upload from '@/pages/Upload';
 import RecordDetail from '@/pages/RecordDetail';
 import ManualReview from '@/pages/ManualReview';
@@ -31,6 +32,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
+            {/* Index路由现在跳转到统计看板 */}
             <Route path="/" element={<Index />} />
 
             {/* 受保护的路由 */}
@@ -39,6 +41,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/statistics"
+              element={
+                <ProtectedRoute>
+                  <StatisticsDashboard />
                 </ProtectedRoute>
               }
             />

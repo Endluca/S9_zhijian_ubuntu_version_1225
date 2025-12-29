@@ -1,13 +1,13 @@
-import { 
-  LayoutDashboard, 
-  Upload, 
+import {
+  LayoutDashboard,
+  Upload,
   LogOut,
   Eye,
   ChevronRight,
+  BarChart3,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
-import { Logo } from "@/components/Logo";
 import { toast } from "@/hooks/use-toast";
 
 import {
@@ -20,7 +20,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
-  SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -31,15 +30,16 @@ import {
 } from "@/components/ui/collapsible";
 
 const mainMenuItems = [
+  { title: "统计看板", url: "/", icon: BarChart3 },
+  { title: "质检看板", url: "/dashboard", icon: LayoutDashboard },
   { title: "数据上传", url: "/upload", icon: Upload },
-  { 
-    title: "人工审核项", 
+  {
+    title: "人工审核项",
     icon: Eye,
     items: [
       { title: "人像清晰度和完整度", url: "/manual-review" }
     ]
   },
-  { title: "质检看板", url: "/dashboard", icon: LayoutDashboard },
 ];
 
 export function AppSidebar() {
@@ -56,14 +56,6 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
-      {!collapsed && (
-        <SidebarHeader className="p-4 border-b border-border">
-          <div className="flex items-center">
-            <Logo size="sm" />
-          </div>
-        </SidebarHeader>
-      )}
-
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs text-muted-foreground px-2">

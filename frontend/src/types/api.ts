@@ -139,3 +139,26 @@ export interface SuccessResponse {
   success: boolean;
   message: string;
 }
+
+// ==================== 统计分析 ====================
+
+export interface CategoryStats {
+  category_name: string;
+  parent_category: string;
+  behavior_code: string;
+  violation_count: number;
+}
+
+export interface VideoStatisticsResponse {
+  total_videos: number;
+  videos_with_violations: number;
+  videos_without_violations: number;
+  category_violations: CategoryStats[];
+  start_date: string;
+  end_date: string;
+}
+
+export interface StatisticsParams {
+  start_date?: string; // ISO 8601 format
+  end_date?: string; // ISO 8601 format
+}

@@ -9,7 +9,7 @@ import logging
 from app.config import settings
 from app.database import SessionLocal
 from app.services.task_manager import init_task_manager
-from app.routers import auth, videos, tasks, categories
+from app.routers import auth, videos, tasks, categories, statistics
 
 # 配置日志
 logging.basicConfig(
@@ -65,6 +65,7 @@ app.include_router(auth.router)
 app.include_router(videos.router)
 app.include_router(tasks.router)
 app.include_router(categories.router)
+app.include_router(statistics.router)
 
 
 @app.get("/")

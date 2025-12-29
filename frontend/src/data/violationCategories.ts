@@ -10,6 +10,7 @@ export const violationCategories: ViolationCategory[] = [
       { id: '课后检测', label: '课后检测', parentId: 'preparation' },
       { id: '抗遗忘预约', label: '抗遗忘预约', parentId: 'preparation' },
       { id: '课程时长达标', label: '课程时长达标', parentId: 'preparation' },
+      { id: '人像清晰度和完整度', label: '人像清晰度和完整度', parentId: 'preparation' },
     ],
   },
   {

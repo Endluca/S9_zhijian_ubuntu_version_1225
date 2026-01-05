@@ -270,21 +270,25 @@ const Dashboard: React.FC = () => {
         
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="sticky top-0 z-40 bg-card border-b border-border shadow-sm">
-            <div className="px-6 h-14 flex items-center justify-between">
+          <header className="sticky top-0 z-40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90 border-b border-border/40 shadow-lg shadow-primary/5">
+            <div className="px-6 h-16 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <SidebarTrigger>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="hover:bg-secondary">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SidebarTrigger>
-                <h1 className="text-lg font-semibold">质检看板</h1>
+                <h1 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  质检看板
+                </h1>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
+
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" className="relative hover:bg-secondary">
+                  <Bell className="h-5 w-5 text-muted-foreground" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-destructive-foreground">3</span>
+                  </span>
                 </Button>
               </div>
             </div>
@@ -300,14 +304,14 @@ const Dashboard: React.FC = () => {
             />
 
             {/* Toolbar */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="text-sm text-muted-foreground">
-                  共 <span className="font-medium text-foreground">{totalRecords}</span> 条记录
+                  共 <span className="font-semibold text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">{totalRecords}</span> 条记录
                 </div>
                 {isExportMode && selectedIds.size > 0 && (
                   <div className="text-sm text-muted-foreground">
-                    已选择 <span className="font-medium text-foreground">{selectedIds.size}</span> 条
+                    已选择 <span className="font-semibold text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">{selectedIds.size}</span> 条
                   </div>
                 )}
               </div>
@@ -317,11 +321,18 @@ const Dashboard: React.FC = () => {
                   size="sm"
                   onClick={handleToggleExportMode}
                   disabled={isExportMode && selectedIds.size === 0}
-                  className={isExportMode && selectedIds.size === 0 ? "opacity-50 cursor-not-allowed" : ""}
+                  className={`
+                    btn-hover transition-all duration-300
+                    ${isExportMode
+                      ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md'
+                      : 'hover:bg-secondary'
+                    }
+                    ${isExportMode && selectedIds.size === 0 ? "opacity-50 cursor-not-allowed" : ""}
+                  `}
                 >
                   {isExportMode ? (
                     <>
-                      <Check className="h-4 w-4 mr-2" />
+                      <Check className="h-4 w-4 mr-2 animate-pulse" />
                       确认导出
                     </>
                   ) : (
@@ -339,6 +350,7 @@ const Dashboard: React.FC = () => {
                       setIsExportMode(false);
                       setSelectedIds(new Set());
                     }}
+                    className="hover:bg-secondary transition-colors"
                   >
                     取消
                   </Button>

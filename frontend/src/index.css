@@ -141,6 +141,10 @@
     background: linear-gradient(160deg, hsl(36 44% 96%) 0%, hsl(25 30% 88%) 50%, hsl(36 20% 85%) 100%);
   }
 
+  .gradient-header {
+    background: linear-gradient(135deg, hsl(36 44% 98%) 0%, hsl(25 30% 94%) 100%);
+  }
+
   .shadow-soft {
     box-shadow: 0 4px 20px -4px hsl(25 30% 50% / 0.1);
   }
@@ -153,13 +157,13 @@
     box-shadow: 0 20px 40px -10px hsl(25 30% 50% / 0.15);
   }
 
-  /* Card hover effect */
+  /* Card hover effect with subtle lift */
   .card-hover {
     @apply transition-all duration-300;
   }
-  
+
   .card-hover:hover {
-    @apply scale-[1.02];
+    @apply scale-[1.02] -translate-y-0.5;
     box-shadow: 0 20px 40px -10px hsl(25 30% 50% / 0.15);
   }
 
@@ -172,22 +176,75 @@
     @apply scale-110;
   }
 
-  /* Button hover */
+  /* Button hover with scale and enhanced shadow */
   .btn-hover {
-    @apply transition-transform duration-200;
+    @apply transition-all duration-200;
   }
 
   .btn-hover:hover {
     @apply scale-105;
   }
 
-  /* Stagger animation delays */
-  .stagger-1 { animation-delay: 0.1s; }
-  .stagger-2 { animation-delay: 0.2s; }
-  .stagger-3 { animation-delay: 0.3s; }
-  .stagger-4 { animation-delay: 0.4s; }
-  .stagger-5 { animation-delay: 0.5s; }
-  .stagger-6 { animation-delay: 0.6s; }
+  /* Smooth fade-in animations */
+  .fade-in {
+    animation: fadeIn 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  .fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  .fade-in-down {
+    animation: fadeInDown 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  .slide-in-left {
+    animation: slideInLeft 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  .slide-in-right {
+    animation: slideInRight 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  .scale-in {
+    animation: scaleIn 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  /* Stagger animation delays for sequential animations */
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.3s; }
+
+  .stagger-delay-1 { animation-delay: 0.1s; }
+  .stagger-delay-2 { animation-delay: 0.2s; }
+  .stagger-delay-3 { animation-delay: 0.3s; }
+  .stagger-delay-4 { animation-delay: 0.4s; }
+  .stagger-delay-5 { animation-delay: 0.5s; }
+  .stagger-delay-6 { animation-delay: 0.6s; }
+}
+
+/* Enhanced scrollbar for dark theme compatibility */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.15);
+  border-radius: 4px;
+  border: 1px solid hsl(var(--border));
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.25);
 }
 
 /* Custom scrollbar */
@@ -209,3 +266,104 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.4);
 }
+
+/* CSS Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Loading spinner animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+

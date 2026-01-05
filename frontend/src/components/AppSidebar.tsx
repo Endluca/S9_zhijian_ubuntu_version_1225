@@ -9,6 +9,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 import {
   Sidebar,
@@ -56,6 +57,25 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
+      {/* Logo and App Name Section */}
+      <div className={cn("flex items-center gap-3 p-4 border-b border-border", collapsed && "justify-center p-3")}>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center flex-shrink-0">
+          <div className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            AC
+          </div>
+        </div>
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-semibold text-foreground truncate">
+              AC教室质检平台
+            </h2>
+            <p className="text-xs text-muted-foreground truncate">
+              智能质检 · 数据驱动
+            </p>
+          </div>
+        )}
+      </div>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs text-muted-foreground px-2">
@@ -116,8 +136,8 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3 border-t border-border">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className={`w-full justify-start gap-3 ${collapsed ? 'px-2' : 'px-3'}`}
           onClick={handleLogout}
         >

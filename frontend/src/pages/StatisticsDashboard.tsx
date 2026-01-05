@@ -26,21 +26,26 @@ import { TrendingUp, FileDown, Calendar, BarChart3, Bell, Menu } from 'lucide-re
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
-// 颜色配置 - 单调和谐配色
+// 颜色配置 - 柔和渐变配色方案
+// 主图表配色（蓝紫渐变系 - 柔和现代）
 const COLORS = [
-  '#4c6ef5',
-  '#364fc7',
-  '#6741d9',
-  '#5f3dc4',
-  '#4285F4',
-  '#3367d6',
-  '#f59f00',
-  '#f57c00',
-  '#e8590c',
-  '#d9480f',
+  'hsl(221, 83%, 65%)',  // 柔和蓝
+  'hsl(248, 83%, 70%)',  // 柔和紫
+  'hsl(210, 83%, 65%)',  // 天空蓝
+  'hsl(269, 83%, 70%)',  // 淡紫
+  'hsl(193, 83%, 65%)',  // 青蓝
+  'hsl(280, 83%, 70%)',  // 薰衣草紫
+  'hsl(180, 83%, 65%)',  // 青绿
+  'hsl(200, 83%, 65%)',  // 深天蓝
+  'hsl(260, 83%, 70%)',  // 紫罗兰
+  'hsl(230, 83%, 65%)',  // 靛蓝
 ];
 
-const PIE_COLORS = ['#22c55e', '#ef4444']; // 绿色（合规）和红色（违规）
+// 饼图配色 - 更柔和的绿色和红色
+const PIE_COLORS = [
+  'hsl(142, 69%, 58%)',  // 柔和绿色（合规）
+  'hsl(0, 84%, 65%)',    // 柔和珊瑚红（违规）
+];
 
 export default function StatisticsDashboard() {
   const { toast } = useToast();
@@ -168,30 +173,41 @@ export default function StatisticsDashboard() {
 
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="sticky top-0 z-40 bg-card border-b border-border shadow-sm">
-            <div className="px-6 h-14 flex items-center justify-between">
+          <header className="sticky top-0 z-40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90 border-b border-border/40 shadow-lg shadow-primary/5">
+            <div className="px-6 h-16 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <SidebarTrigger>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="hover:bg-secondary">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SidebarTrigger>
-                <div className="flex items-center space-x-4">
-                  <BarChart3 className="w-7 h-7 text-primary" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                  </div>
                   <div>
-                    <h1 className="text-lg font-semibold">统计看板</h1>
+                    <h1 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                      统计看板
+                    </h1>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Button onClick={handleExportCSV} variant="outline" size="sm">
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleExportCSV}
+                  variant="outline"
+                  size="sm"
+                  className="btn-hover"
+                >
                   <FileDown className="mr-2 h-4 w-4" />
                   导出CSV
                 </Button>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
+                <Button variant="ghost" size="icon" className="relative hover:bg-secondary">
+                  <Bell className="h-5 w-5 text-muted-foreground" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-destructive-foreground">5</span>
+                  </span>
                 </Button>
               </div>
             </div>
@@ -202,34 +218,40 @@ export default function StatisticsDashboard() {
             <div className="container mx-auto space-y-6">
 
       {/* 日期筛选 */}
-      <Card className="mt-6">
+      <Card className="border-border/40 shadow-card hover:shadow-card-hover transition-all duration-300">
         <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-muted-foreground" />
-            <CardTitle>时间筛选</CardTitle>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-accent/10 to-accent/20 flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-accent" />
+            </div>
+            <div>
+              <CardTitle className="text-base">时间筛选</CardTitle>
+              <CardDescription>
+                选择要统计的时间范围
+              </CardDescription>
+            </div>
           </div>
-          <CardDescription>
-            选择要统计的时间范围（留空表示所有时间）
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <Label htmlFor="start-date">开始日期</Label>
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="start-date" className="text-sm font-medium">开始日期</Label>
               <Input
                 id="start-date"
                 type="date"
                 value={startDate}
                 onChange={(e) => handleDateChange('start', e.target.value)}
+                className="bg-background/70"
               />
             </div>
-            <div className="flex-1">
-              <Label htmlFor="end-date">结束日期</Label>
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="end-date" className="text-sm font-medium">结束日期</Label>
               <Input
                 id="end-date"
                 type="date"
                 value={endDate}
                 onChange={(e) => handleDateChange('end', e.target.value)}
+                className="bg-background/70"
               />
             </div>
             <Button
@@ -239,6 +261,7 @@ export default function StatisticsDashboard() {
                 refetch();
               }}
               variant="outline"
+              className="btn-hover"
             >
               清除筛选
             </Button>
@@ -249,30 +272,37 @@ export default function StatisticsDashboard() {
       {/* 统计概览卡片 */}
       {statistics && (
         <>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">总视频数</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card className="group card-hover border-border/40 shadow-card hover:shadow-card-hover transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">总视频数</CardTitle>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{statistics.total_videos}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  {statistics.total_videos}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-success/60"></span>
                   审核完成 (review_completed)
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">有违规视频</CardTitle>
-                <TrendingUp className="h-4 w-4 text-red-500" />
+            <Card className="group card-hover border-border/40 shadow-card hover:shadow-card-hover transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">有违规视频</CardTitle>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-destructive/10 to-destructive/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="h-5 w-5 text-destructive" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-500">
+                <div className="text-3xl font-bold bg-gradient-to-r from-destructive to-destructive/80 bg-clip-text text-transparent">
                   {statistics.videos_with_violations}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-2">
                   {statistics.total_videos > 0
                     ? `${((statistics.videos_with_violations / statistics.total_videos) * 100).toFixed(1)}%`
                     : '0%'}
@@ -280,16 +310,18 @@ export default function StatisticsDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">无违规视频</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-500" />
+            <Card className="group card-hover border-border/40 shadow-card hover:shadow-card-hover transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">无违规视频</CardTitle>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-success/10 to-success/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="h-5 w-5 text-success" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-500">
+                <div className="text-3xl font-bold bg-gradient-to-r from-success to-success/80 bg-clip-text text-transparent">
                   {statistics.videos_without_violations}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-2">
                   {statistics.total_videos > 0
                     ? `${((statistics.videos_without_violations / statistics.total_videos) * 100).toFixed(1)}%`
                     : '0%'}
@@ -299,14 +331,19 @@ export default function StatisticsDashboard() {
           </div>
 
           {/* 图表展示区 */}
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {/* 饼图：有违规 vs 无违规 */}
-            <Card>
+            <Card className="border-border/40 shadow-card hover:shadow-card-hover transition-all duration-300">
               <CardHeader>
-                <CardTitle>合规性分布</CardTitle>
-                <CardDescription>
-                  有违规与无违规视频比例
-                </CardDescription>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-md bg-gradient-to-br from-accent/10 to-accent/20 flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-full bg-accent"></div>
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">合规性分布</CardTitle>
+                    <CardDescription>有违规与无违规视频比例</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -317,56 +354,91 @@ export default function StatisticsDashboard() {
                       cy="50%"
                       labelLine={false}
                       label={({ name, percent }) =>
-                        `${name} ${(percent * 100).toFixed(0)}%`
+                        `${name}\n${(percent * 100).toFixed(0)}%`
                       }
-                      outerRadius={80}
+                      outerRadius={90}
                       fill="#8884d8"
                       dataKey="value"
                     >
                       {getPieData().map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={PIE_COLORS[index % PIE_COLORS.length]}
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                        />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => [`${value} 个视频`, '数量']} />
-                    <Legend />
+                    <Tooltip
+                      formatter={(value: number) => [`${value} 个视频`, '数量']}
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: '1px solid hsl(var(--border))',
+                        boxShadow: '0 4px 20px -4px hsl(25 30% 50% / 0.1)',
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      wrapperStyle={{
+                        paddingTop: '12px',
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
             {/* 柱状图：各违规项分布 */}
-            <Card className="md:col-span-2">
+            <Card className="md:col-span-2 border-border/40 shadow-card hover:shadow-card-hover transition-all duration-300">
               <CardHeader>
-                <CardTitle>违规项分布 (Top 10)</CardTitle>
-                <CardDescription>
-                  最常见的违规项目统计（按出现次数排序）
-                </CardDescription>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                    <BarChart3 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">违规项分布 (Top 10)</CardTitle>
+                    <CardDescription>最常见的违规项目统计（按出现次数排序）</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart
                     data={getBarData()}
                     margin={{
-                      top: 5,
+                      top: 10,
                       right: 30,
                       left: 20,
                       bottom: 60,
                     }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground) / 0.2)" />
                     <XAxis
                       dataKey="name"
                       interval={0}
                       angle={-45}
                       textAnchor="end"
                       height={80}
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                     />
-                    <YAxis />
-                    <Tooltip formatter={(value: number) => [`${value} 个视频`, '违规视频数']} />
-                    <Bar dataKey="count" fill="#4c6ef5">
+                    <YAxis
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [`${value} 个视频`, '违规视频数']}
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: '1px solid hsl(var(--border))',
+                        boxShadow: '0 4px 20px -4px hsl(25 30% 50% / 0.1)',
+                      }}
+                    />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                       {getBarData().map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          className="hover:opacity-80 transition-opacity"
+                        />
                       ))}
                     </Bar>
                   </BarChart>
@@ -376,49 +448,71 @@ export default function StatisticsDashboard() {
           </div>
 
           {/* 详细统计表格 */}
-          <Card>
+          <Card className="border-border/40 shadow-card hover:shadow-card-hover transition-all duration-300">
             <CardHeader>
-              <CardTitle>违规项详细统计</CardTitle>
-              <CardDescription>
-                按父类别和违规项名称统计
-              </CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                  <div className="text-xs font-bold text-primary">#</div>
+                </div>
+                <div>
+                  <CardTitle className="text-base">违规项详细统计</CardTitle>
+                  <CardDescription>按父类别和违规项名称统计</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">父类别</th>
-                      <th className="text-left p-2">违规项名称</th>
-                      <th className="text-left p-2">行为代码</th>
-                      <th className="text-right p-2">违规视频数</th>
-                      <th className="text-right p-2">占比</th>
+                  <thead className="bg-muted/40">
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 text-muted-foreground font-medium">父类别</th>
+                      <th className="text-left p-3 text-muted-foreground font-medium">违规项名称</th>
+                      <th className="text-left p-3 text-muted-foreground font-medium">行为代码</th>
+                      <th className="text-right p-3 text-muted-foreground font-medium">违规视频数</th>
+                      <th className="text-right p-3 text-muted-foreground font-medium">占比</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="bg-card">
                     {statistics.category_violations.map((item, index) => {
                       const percentage =
                         statistics.total_videos > 0
                           ? ((item.violation_count / statistics.total_videos) * 100).toFixed(1)
                           : '0';
                       return (
-                        <tr key={index} className="border-b hover:bg-muted/50">
-                          <td className="p-2">{item.parent_category}</td>
-                          <td className="p-2">{item.category_name}</td>
-                          <td className="p-2">
-                            <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                        <tr key={index} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                          <td className="p-3">{item.parent_category}</td>
+                          <td className="p-3">
+                            <span className="font-medium">{item.category_name}</span>
+                          </td>
+                          <td className="p-3">
+                            <code className="text-xs bg-gradient-to-r from-primary/10 to-primary/20 px-2 py-1 rounded-md font-mono text-primary">
                               {item.behavior_code}
                             </code>
                           </td>
-                          <td className="text-right p-2">{item.violation_count}</td>
-                          <td className="text-right p-2">{percentage}%</td>
+                          <td className="text-right p-3 font-medium">{item.violation_count}</td>
+                          <td className="text-right p-3">
+                            <span className="text-sm">{percentage}%</span>
+                            <div className="mt-1">
+                              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-500"
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
                     {statistics.category_violations.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="text-center p-4 text-muted-foreground">
-                          暂无违规数据
+                        <td colSpan={5} className="text-center p-6 text-muted-foreground">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                              <BarChart3 className="w-5 h-5 text-muted-foreground" />
+                            </div>
+                            暂无违规数据
+                          </div>
                         </td>
                       </tr>
                     )}

@@ -15,8 +15,8 @@ RUN npm ci --registry=https://registry.npmmirror.com
 COPY frontend/ ./
 RUN npm run build
 
-# Stage 2: 运行时镜像
-FROM python:3.11-slim-bookworm
+# Stage 2: 运行时镜像 (Debian 12 bookworm)
+FROM python:3.11-bookworm
 
 # 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \

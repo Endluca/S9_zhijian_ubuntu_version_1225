@@ -4,161 +4,135 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a full-stack AI-powered video classroom quality analysis system for 51Talk. The application processes classroom video recordings and automatically evaluates teaching quality across multiple dimensions using AI services.
+AI-powered video classroom quality analysis system for 51Talk. Processes classroom video recordings and automatically evaluates teaching quality using AI services (ASR + LLM + image analysis).
 
 **Technology Stack:**
-- **Backend**: FastAPI (Python 3.13), PostgreSQL, SQLAlchemy
-- **Frontend**: React 18 (TypeScript), Vite, TailwindCSS, shadcn/ui
-- **AI Services**: Alibaba Tingwu (ASR), ByteDance Doubao (LLM), Alibaba OSS
+- **Backend**: FastAPI, PostgreSQL, SQLAlchemy, Python 3.9+
+- **Frontend**: React 18 (TypeScript), Vite, TailwindCSS, shadcn/ui, TanStack Query
+- **AI Services**: Alibaba Tingwu (ASR), ByteDance Doubao (LLM), Alibaba OSS (storage)
 - **Infrastructure**: Docker, Docker Compose
-
-## Architecture
-
-### Backend Structure (`/backend`)
-```
-app/
-├── main.py              # FastAPI application entry point
-├── config.py            # Configuration management with Pydantic Settings
-├── database.py          # Database connection and session management
-├── routers/             # API route handlers (auth, videos, evaluations)
-├── models/              # SQLAlchemy database models
-├── schemas/             # Pydantic validation schemas
-├── services/            # Business logic layer (video processing, evaluation)
-├── external/            # External service integrations (Tingwu, Doubao, OSS)
-└── utils/               # Utility functions (timestamps, ID generation)
-```
-
-### Frontend Structure (`/frontend`)
-```
-src/
-├── pages/               # Page components (Dashboard, Videos, Settings)
-├── components/          # Reusable UI components (tables, dialogs, forms)
-├── api/                # API client functions (axios)
-├── hooks/              # Custom React hooks
-├── types/              # TypeScript type definitions
-└── lib/                # Utility functions
-```
 
 ## Development Commands
 
-### Local Development (Docker)
+### Docker (Primary Development Method)
 ```bash
-# Start all services (PostgreSQL, Backend, Frontend)
-docker-compose up -d
-
-# View logs
-docker-compose logs -f backend  # Backend logs
-docker-compose logs -f frontend # Frontend logs
-docker-compose logs -f postgres # Database logs
-
-# Restart services
-docker-compose restart backend
-
-# Stop all services
-docker-compose down
+docker-compose up -d                    # Start all services
+docker-compose logs -f backend          # Backend logs
+docker-compose logs -f frontend         # Frontend logs
+docker-compose restart backend          # Restart after code changes
+docker-compose down                     # Stop all services
 ```
 
-### Frontend Development
+### Frontend (standalone)
 ```bash
 cd frontend
-
-# Install dependencies (first time only)
-npm install
-
-# Run development server
-npm run dev
-
-# Run linter
-npm run lint
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
+npm install                             # First time only
+npm run dev                             # Dev server at localhost:5173
+npm run lint                            # Run ESLint
+npm run build                           # Production build
 ```
 
-### Backend Development
+### Backend (standalone)
 ```bash
 cd backend
-
-# Install dependencies (first time only)
-pip install -r requirements.txt
-
-# Run development server (if not using Docker)
-uvicorn app.main:app --reload
-
-# Initialize database (first time)
-psql -U postgres -d video_analysis -f init_database.sql
+pip install -r requirements.txt         # First time only
+uvicorn app.main:app --reload           # Dev server at localhost:8000
 ```
 
-## Key Development Tasks
+### Database
+```bash
+# Initialize (first time)
+psql -U postgres -d video_analysis -f backend/init_database.sql
 
-### Database Migrations
-The system uses manual SQL migrations. When adding fields or changing schema:
+# Run migrations
+psql -d video_analysis -f backend/migrations/<migration_file>.sql
+```
 
-1. Add to `backend/init_database.sql` for new setups
-2. Create migration SQL files in `backend/migrations/`
-3. Follow the migration examples in `backend/migrations/README.md`
+## Architecture
+
+### Backend (`/backend/app`)
+- `main.py` - FastAPI app entry, registers routers: auth, videos, tasks, categories, statistics
+- `config.py` - Pydantic Settings for environment variables
+- `database.py` - SQLAlchemy session management
+- `routers/` - API endpoints (auth, videos, tasks, categories, statistics)
+- `models/` - SQLAlchemy models (video, user, evaluation, transcript, category)
+- `schemas/` - Pydantic request/response schemas
+- `services/video_processor.py` - Core 9-step video processing pipeline
+- `services/task_manager.py` - Async task queue management
+- `external/` - External service clients:
+  - `tingwu_asr.py` - Alibaba Tingwu ASR
+  - `doubao_model.py` - ByteDance Doubao LLM
+  - `oss_uploader.py` - Alibaba OSS
+  - `frame_extractor.py` - OpenCV video frame extraction
+  - `video_downloader.py` - Video download handler
+
+### Frontend (`/frontend/src`)
+- `pages/` - Route components:
+  - `Dashboard.tsx` - Main video list view
+  - `StatisticsDashboard.tsx` - Analytics and metrics
+  - `Upload.tsx` - Video upload interface
+  - `RecordDetail.tsx` - Individual video analysis details
+  - `ManualReview.tsx` - Human review interface
+- `components/dashboard/` - Dashboard-specific components (FilterBar, ListView, CardView, UploadModal)
+- `components/ui/` - shadcn/ui components
+- `api/` - Axios API client functions
+
+### Video Processing Pipeline (9 steps)
+```
+1. ASR (Tingwu)       → Speech-to-text transcription
+2. Parse ASR          → Format transcript with timestamps
+3. Download Video     → Fetch video file locally
+4. Extract Frames     → Strategic keyframe extraction (OpenCV)
+5. Delete Video       → Clean up local video file
+6. Upload OSS         → Upload frames to Alibaba OSS
+7. LLM Analysis       → Doubao multimodal analysis (images + transcript)
+8. Save Results       → Store evaluations to database
+9. Cleanup Files      → Delete local frame images
+```
+
+Pipeline implemented in `backend/app/services/video_processor.py` with retry logic via `@retry_on_network_error` decorator.
+
+## Configuration
+
+### Environment Variables
+
+**Backend (`/backend/.env`):**
+```
+POSTGRES_PASSWORD=<db_password>
+DATABASE_URL=postgresql://postgres:<password>@localhost:5432/video_analysis
+DASHSCOPE_API_KEY=<alibaba_tingwu_key>
+TINGWU_APP_ID=<tingwu_app_id>
+DOUBAO_API_KEY=<bytedance_doubao_key>
+OSS_ACCESS_KEY_ID=<alibaba_oss_key>
+OSS_ACCESS_KEY_SECRET=<alibaba_oss_secret>
+```
+
+**Frontend (`/frontend/.env`):**
+```
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### Default Login Credentials
+- Username: `51talk`
+- Password: `123456`
+
+## Database Migrations
+
+Manual SQL migrations in `backend/migrations/`:
+1. Add schema changes to `backend/init_database.sql` for new setups
+2. Create migration SQL file in `backend/migrations/`
+3. Execute: `psql -d video_analysis -f backend/migrations/<file>.sql`
+
+## Key Patterns
 
 ### Adding API Endpoints
 1. Create route in `backend/app/routers/`
 2. Add Pydantic schema in `backend/app/schemas/`
-3. Add database model if needed in `backend/app/models/`
+3. Add SQLAlchemy model if needed in `backend/app/models/`
 4. Implement business logic in `backend/app/services/`
-5. Add frontend API client in `frontend/src/api/`
+5. Add API client function in `frontend/src/api/`
 
-### Video Processing Pipeline
-The video analysis follows a 9-step asynchronous pipeline:
-1. Video upload/download
-2. ASR transcription (Alibaba Tingwu)
-3. Transcript formatting
-4. Strategic frame extraction
-5. Image upload to OSS
-6. LLM analysis (ByteDance Doubao)
-7. Result parsing and storage
-8. Manual review availability
-9. Compliance status update
-
-The pipeline is implemented in `backend/app/services/video_processing.py` with task status tracking.
-
-## Configuration
-
-### Environment Variables Required
-Create `.env` files in both backend and frontend directories:
-
-**Backend (`/backend/.env`):**
-- `POSTGRES_PASSWORD` - PostgreSQL password
-- `DASHSCOPE_API_KEY` - Alibaba Tingwu ASR API key
-- `TINGWU_APP_ID` - Tingwu App ID
-- `DOUBAO_API_KEY` - ByteDance Doubao API key
-- `OSS_ACCESS_KEY_ID` - Alibaba OSS access key
-- `OSS_ACCESS_KEY_SECRET` - Alibaba OSS secret key
-
-**Frontend (`/frontend/.env`):**
-- `VITE_API_BASE_URL` - Backend API URL (default: http://localhost:8000)
-
-### Default Credentials
-After database initialization:
-- **Admin Email**: 51talk
-- **Admin Password**: 123456
-
-## Testing
-
-No automated tests are currently implemented. Testing is done manually through the frontend interface and API endpoints.
-
-## Deployment
-
-Production deployment uses Docker Compose with the same configuration. Configure production environment variables before deploying.
-
-## Claude Code Setup
-
-The repository includes `claude_code_env.sh` for setting up the Claude Code environment variables.
-
-## Important Notes
-
-- All AI API keys should be stored in environment variables, never in code
-- The video processing pipeline runs asynchronously to avoid API timeouts
-- Database updates use triggers to automatically manage `updated_at` timestamps
-- The system supports multiple concurrent video processing tasks
-- Error handling includes exponential backoff retry for external API failures
+### Error Handling
+- External API calls use `@retry_on_network_error` decorator with exponential backoff
+- LLM response parsing has built-in retry (up to 3 attempts)
+- Failed tasks stored with `error_message` and `retry_count` fields

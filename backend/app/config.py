@@ -3,6 +3,7 @@
 使用 Pydantic Settings 管理环境变量
 """
 import os
+import sys
 from typing import List
 from pydantic_settings import BaseSettings
 from functools import lru_cache
@@ -74,5 +75,35 @@ def get_settings() -> Settings:
     return Settings()
 
 
+def validate_security_config():
+    """
+    验证安全配置
+    
+    检查关键安全配置是否使用了不安全的默认值
+    如果发现问题，将拒绝启动应用
+    """
+    _settings = get_settings()
+    
+    # 检查 SECRET_KEY 是否为默认值
+    default_secret_key = "your-secret-key-change-in-production-123456789"
+    if _settings.SECRET_KEY == default_secret_key:
+        print("\n" + "="*70)
+        print("❌ 严重安全错误：检测到使用默认 SECRET_KEY")
+        print("="*70)
+        print("JWT SECRET_KEY 仍在使用硬编码的默认值，这在生产环境中极其危险！")
+        print("\n攻击者可以使用此默认密钥伪造任意 JWT 令牌，完全绕过身份验证。")
+        print("\n修复方法：")
+        print("1. 在 .env 文件中设置: SECRET_KEY=<你的强随机密钥>")
+        print("2. 或设置环境变量: export SECRET_KEY=<你的强随机密钥>")
+        print("\n生成强随机密钥示例命令:")
+        print("   openssl rand -hex 32")
+        print("   python -c 'import secrets; print(secrets.token_hex(32))'")
+        print("="*70 + "\n")
+        sys.exit(1)
+
+
 # 便捷访问
 settings = get_settings()
+
+# 启动时验证安全配置
+validate_security_config()

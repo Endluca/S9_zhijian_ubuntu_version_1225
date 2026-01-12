@@ -43,7 +43,7 @@ def get_current_user(
     """
     # 提取token
     token = credentials.credentials
-    logger.info(f"收到的 token 长度: {len(token)}, 前50字符: {token[:50]}...")
+    logger.debug(f"收到认证请求，token长度: {len(token)}")
 
     # 解码token
     payload = decode_access_token(token)

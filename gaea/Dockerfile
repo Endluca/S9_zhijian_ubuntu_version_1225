@@ -52,7 +52,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # 安装 Python 依赖
 WORKDIR /app/backend
 COPY backend/requirements.txt ./
-RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
 
 # 复制后端代码
 COPY backend/ ./

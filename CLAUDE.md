@@ -52,30 +52,42 @@ psql -d video_analysis -f backend/migrations/<migration_file>.sql
 
 ### Backend (`/backend/app`)
 - `main.py` - FastAPI app entry, registers routers: auth, videos, tasks, categories, statistics
-- `config.py` - Pydantic Settings for environment variables
+- `config.py` - Pydantic Settings for environment variables (validates SECRET_KEY at startup)
 - `database.py` - SQLAlchemy session management
-- `routers/` - API endpoints (auth, videos, tasks, categories, statistics)
+- `routers/` - API endpoints:
+  - `/api/auth` - Authentication (login, register)
+  - `/api/videos` - Video CRUD and management
+  - `/api/tasks` - Processing task management
+  - `/api/categories` - Evaluation categories
+  - `/api/statistics` - Analytics and metrics
 - `models/` - SQLAlchemy models (video, user, evaluation, transcript, category)
 - `schemas/` - Pydantic request/response schemas
 - `services/video_processor.py` - Core 9-step video processing pipeline
 - `services/task_manager.py` - Async task queue management
+- `services/report_generator.py` - Report generation
+- `utils/retry_helper.py` - `@retry_on_network_error` decorator with exponential backoff
 - `external/` - External service clients:
-  - `tingwu_asr.py` - Alibaba Tingwu ASR
+  - `tingwu_asr.py` - Alibaba Tingwu ASR client
+  - `asr_processor.py` - ASR result parsing and formatting
   - `doubao_model.py` - ByteDance Doubao LLM
   - `oss_uploader.py` - Alibaba OSS
   - `frame_extractor.py` - OpenCV video frame extraction
   - `video_downloader.py` - Video download handler
 
 ### Frontend (`/frontend/src`)
+- `App.tsx` - React Router setup with protected routes
 - `pages/` - Route components:
-  - `Dashboard.tsx` - Main video list view
-  - `StatisticsDashboard.tsx` - Analytics and metrics
-  - `Upload.tsx` - Video upload interface
-  - `RecordDetail.tsx` - Individual video analysis details
-  - `ManualReview.tsx` - Human review interface
+  - `Login.tsx` - Authentication page
+  - `Dashboard.tsx` - Main video list view (`/dashboard`)
+  - `StatisticsDashboard.tsx` - Analytics and metrics (`/statistics`)
+  - `Upload.tsx` - Video upload interface (`/upload`)
+  - `RecordDetail.tsx` - Individual video analysis details (`/record/:id`)
+  - `ManualReview.tsx` - Human review interface (`/manual-review`)
 - `components/dashboard/` - Dashboard-specific components (FilterBar, ListView, CardView, UploadModal)
 - `components/ui/` - shadcn/ui components
-- `api/` - Axios API client functions
+- `api/` - API client layer:
+  - `client.ts` - Axios instance with auth interceptor
+  - `auth.ts`, `videos.ts`, `categories.ts`, `statistics.ts` - Domain-specific API functions
 
 ### Video Processing Pipeline (9 steps)
 ```

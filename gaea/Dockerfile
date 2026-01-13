@@ -15,8 +15,12 @@ RUN npm ci --registry=https://registry.npmmirror.com
 COPY frontend/ ./
 RUN npm run build
 
-# Stage 2: 运行时镜像 (Debian 12 bookworm)
-FROM python:3.11-bookworm
+# Stage 2: 运行时镜像 (Debian 11 bullseye)
+FROM python:3.11-bullseye
+
+# 更换腾讯云镜像源
+RUN sed -i 's/deb.debian.org/mirrors.cloud.tencent.com/g' /etc/apt/sources.list \
+    && sed -i 's/security.debian.org/mirrors.cloud.tencent.com/g' /etc/apt/sources.list
 
 # 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \

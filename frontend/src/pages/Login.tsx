@@ -85,13 +85,6 @@ const Login: React.FC = () => {
             </p>
           </div>
 
-          {/* Hint with glass effect */}
-          <div className="mb-6 p-4 bg-blue-50/70 border border-blue-200/50 rounded-lg backdrop-blur-sm fade-in-up stagger-2">
-            <p className="text-sm text-blue-700">
-              <strong>提示：</strong> 默认账号: <code className="bg-blue-100/70 px-2 py-0.5 rounded font-mono">51talk</code>，密码: <code className="bg-blue-100/70 px-2 py-0.5 rounded font-mono">123456</code>
-            </p>
-          </div>
-
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">

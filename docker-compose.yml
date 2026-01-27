@@ -28,7 +28,6 @@ services:
       dockerfile: Dockerfile
     container_name: s9_backend
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/video_analysis
       - DEBUG=False
     env_file:
       - ./backend/.env

@@ -13,7 +13,11 @@ engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,  # 连接前检查连接是否有效
     pool_recycle=3600,  # 1小时后回收连接
-    echo=settings.DEBUG  # DEBUG 模式下打印 SQL
+    echo=settings.DEBUG,  # DEBUG 模式下打印 SQL
+    connect_args={
+        "connect_timeout": 10,  # 连接超时时间（秒）
+        "options": "-c timezone=utc"  # 设置时区
+    }
 )
 
 # 创建会话工厂

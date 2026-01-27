@@ -9,6 +9,26 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
+# 查找 .env 文件路径
+def find_env_file():
+    """查找 .env 文件，尝试多个可能的路径"""
+    possible_paths = [
+        ".env",
+        "backend/.env",
+        "/app/.env",
+        "/app/backend/.env"
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            print(f"✓ 找到配置文件: {path}")
+            return path
+    print("⚠ 警告: 未找到 .env 文件，使用默认配置")
+    return ".env"
+
+
+ENV_FILE_PATH = find_env_file()
+
+
 class Settings(BaseSettings):
     """应用配置类"""
 
@@ -61,7 +81,8 @@ class Settings(BaseSettings):
     ]
 
     class Config:
-        env_file = ".env"
+        env_file = ENV_FILE_PATH
+        env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "allow"  # 允许额外的字段
 
@@ -72,7 +93,17 @@ def get_settings() -> Settings:
     获取配置单例
     使用 lru_cache 确保只创建一次配置实例
     """
-    return Settings()
+    settings = Settings()
+    # 打印数据库配置信息（隐藏密码）
+    db_url = settings.DATABASE_URL
+    if "@" in db_url:
+        # 隐藏密码部分
+        parts = db_url.split("@")
+        if ":" in parts[0]:
+            user_part = parts[0].split("://")[1].split(":")[0]
+            host_part = parts[1] if len(parts) > 1 else "..."
+            print(f"✓ 数据库配置: 用户={user_part}, 主机={host_part}")
+    return settings
 
 
 def validate_security_config():

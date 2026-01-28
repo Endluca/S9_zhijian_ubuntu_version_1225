@@ -59,8 +59,9 @@ class OSSUploader:
                 logger.debug(f"[{video_id}] 上传图片 {i}/{len(frame_paths)}: {oss_key}")
                 self.bucket.put_object_from_file(oss_key, local_path)
 
-                # 构建完整的 URL
-                url = f"{self.base_url}/{oss_key}"
+                # 生成带签名的临时访问 URL（2小时有效期）
+                # 使用签名 URL 可以让存储桶保持私有，更安全
+                url = self.bucket.sign_url('GET', oss_key, 7200)
                 frame_urls.append(url)
 
             logger.info(f"[{video_id}] ✓ OSS 上传完成: {len(frame_urls)} 张图片")
